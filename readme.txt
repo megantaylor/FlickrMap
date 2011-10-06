@@ -1,0 +1,1 @@
+Just a very simple JSON to Google Maps example, using the Flickr API. Finds and plots photos based on search term within specific geographic area (Bronx, NY). Try "zoo", "NYPD", or "Yankees". Default search term is "baseball".

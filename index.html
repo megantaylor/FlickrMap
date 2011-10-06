@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href="style.css" type="text/css" rel="stylesheet">
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<!-- jQuery -->
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+
+    <script type="text/javascript">    
+        //declare namespace
+        var flickrmap = {};
+        //declare map
+        var map;
+        //marker array
+        var flickr = [];
+        //info window
+        var infowindow = new google.maps.InfoWindow();
+        //trace function for debugging
+        function trace(message) 
+        { 
+            if (typeof console != 'undefined') 
+            {
+                console.log(message);
+            }
+        }
+        //Function to create Flickr Marker
+        flickrmap.createFlickrMarker = function(i,latitude,longitude,infowindowcontent,icon)
+        {
+            var markerLatLng = new google.maps.LatLng(latitude,longitude);  
+            //set marker to be the flickr image, resizing it to 32 by 32 pixels
+            var image = new google.maps.MarkerImage(icon, null, null, null, new google.maps.Size(32,32));
+            //create and map the marker
+            flickr[i] = new google.maps.Marker({
+                position: markerLatLng,
+                map: map,
+                title: infowindowcontent,
+                icon: image
+            });
+            //add an onclick event
+            google.maps.event.addListener(flickr[i], 'click', function() {
+                infowindow.setContent(infowindowcontent);
+                infowindow.open(map,flickr[i]);
+            });
+        }
+        //Function to get data from Flickr
+        flickrmap.getFlickr = function(search) {
+			$.getJSON('http://api.flickr.com/services/rest/?method=flickr.photos.search&format=json&api_key=c7da18f4cdc5e79a5f073858e7871a53&text='+search+'&lat=40.846761&lon=-73.873207&extras=geo,url_t,url_m,url_sq&radius=10&accuracy=13&per_page=100&jsoncallback=?',
+
+                function(data)
+                {trace(data);
+                    $.each(data.photos.photo, function(i,item){
+                        infowindowcontent = '<strong>'+item.title+'</strong><br>';
+                        infowindowcontent += '<a href="'+item.url_m+'" target="_blank">';
+                        infowindowcontent += '<img src="'+item.url_t+'"></a>';
+                        flickrmap.createFlickrMarker(i,item.latitude,item.longitude,infowindowcontent,item.url_sq);  
+                    });    
+                }
+            );
+        } 
+        //Function that gets run when the document loads
+        flickrmap.initialize = function()
+        {
+            var latlng = new google.maps.LatLng(40.846761, -73.873207);
+            var myOptions = {
+                zoom: 13,
+                center: latlng,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+            //clear markers
+            function clearOverlays() {
+				if (flickr) {
+					for (i in flickr) {
+						flickr[i].setMap(null);
+					}
+				}
+			}
+            //Function to get search term, clear markers
+			function searchterm() {
+				var term = $("#q").val();
+				clearOverlays();
+				flickrmap.getFlickr(term);
+			}
+			$("button").click(searchterm);
+			searchterm();
+        }
+    </script>
+</head>
+
+<body onload="flickrmap.initialize()">
+
+<div id="search">
+          <label>Search Flickr for photos about</label>
+          <input type="text" value="baseball" id="q"/>
+          <button id="btn">Search!</button>
+</div>
+    <div id="map-wrapper">
+    <div id="map_canvas"></div><!-- map div container -->
+    </div>
+</body>
+</html>
